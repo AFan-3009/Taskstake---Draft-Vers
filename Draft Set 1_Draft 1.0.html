@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TaskStake MVP</title>
+<style>
+body{font-family:Arial,sans-serif;background:#f4f6f9;padding:30px}
+.container{max-width:700px;margin:auto;background:#fff;padding:25px;border-radius:12px;box-shadow:0 2px 10px rgba(0,0,0,.1)}
+input,button{width:100%;padding:10px;margin-top:8px;margin-bottom:15px}
+button{background:#2563eb;color:white;border:none;border-radius:6px;cursor:pointer}
+button:hover{background:#1d4ed8}
+.progress-bar{width:100%;height:25px}
+.success{color:green;font-weight:bold}
+</style>
+</head>
+<body>
+<div class="container">
+<h1>TaskStake MVP</h1>
+<p>Set a goal, stake money, and complete tasks to earn it back.</p>
+
+<label>Goal</label>
+<input type="text" id="goal" placeholder="Exercise 20 times">
+
+<label>Deposit Amount ($)</label>
+<input type="number" id="deposit" value="50">
+
+<label>Total Tasks</label>
+<input type="number" id="totalTasks" value="10">
+
+<h2 id="goalDisplay">No Goal Set</h2>
+<p>Deposit: $<span id="depositDisplay">50</span></p>
+<p>Progress: <span id="completed">0</span>/<span id="total">10</span></p>
+<progress id="progress" class="progress-bar" value="0" max="10"></progress>
+
+<button onclick="saveGoal()">Save Goal</button>
+<button onclick="completeTask()">Complete Task</button>
+
+<p id="message"></p>
+</div>
+
+<script>
+let completedTasks = 0;
+
+function saveGoal(){
+ document.getElementById('goalDisplay').textContent = document.getElementById('goal').value || 'No Goal Set';
+ document.getElementById('depositDisplay').textContent = document.getElementById('deposit').value;
+ document.getElementById('total').textContent = document.getElementById('totalTasks').value;
+ document.getElementById('progress').max = document.getElementById('totalTasks').value;
+}
+
+function completeTask(){
+ const totalTasks = parseInt(document.getElementById('totalTasks').value);
+ if(completedTasks < totalTasks){
+   completedTasks++;
+ }
+ document.getElementById('completed').textContent = completedTasks;
+ document.getElementById('progress').value = completedTasks;
+
+ if(completedTasks >= totalTasks){
+   const deposit = document.getElementById('deposit').value;
+   document.getElementById('message').innerHTML = '<span class="success">🎉 Success! Deposit Returned: $' + deposit + '</span>';
+ }
+}
+</script>
+</body>
+</html>

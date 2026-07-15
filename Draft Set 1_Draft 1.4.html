@@ -1,0 +1,890 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TaskStake MVP</title>
+</head>
+<body>
+
+<div id="app"></div>
+
+<style>
+  /* ======================================================================
+     THEME VARIABLES
+     Central color palette for the "vault" theme (dark ink background,
+     brass/gold accents, steel grays for secondary text, green/red for
+     success/failure states). Only variables actually referenced below
+     are kept.
+     ====================================================================== */
+  #app {
+    --ink: #0B1220;
+    --steel-light: #5C6B7A;
+    --brass: #C89B3C;
+    --brass-light: #E3C878;
+    --green: #4C9A6A;
+    --paper: #EDE7DA;
+
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--ink);
+    color: var(--paper);
+    min-height: 100vh;
+    padding: 32px 16px 60px;
+    box-sizing: border-box;
+    display: flex;
+    justify-content: center;
+  }
+  #app * { box-sizing: border-box; }
+  .wrap { width: 100%; max-width: 460px; }
+
+  /* ======================================================================
+     TYPOGRAPHY: eyebrow labels + page headings
+     ====================================================================== */
+  .eyebrow {
+    font-family: 'SF Mono', ui-monospace, Menlo, monospace;
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--brass-light);
+    margin: 0 0 6px;
+  }
+  h1 {
+    font-family: Georgia, 'Times New Roman', serif;
+    font-weight: 400;
+    font-size: 30px;
+    margin: 0 0 28px;
+    color: var(--paper);
+    letter-spacing: 0.01em;
+  }
+  h1 span { color: var(--brass-light); font-style: italic; }
+
+  /* ======================================================================
+     CARD + FORM CONTROLS
+     Shared container style and input styling used across every screen.
+     ====================================================================== */
+  .card {
+    background: #131C29;
+    border: 1px solid #232F3F;
+    border-radius: 10px;
+    padding: 24px;
+    margin-bottom: 20px;
+  }
+  label {
+    display: block;
+    font-size: 12px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--steel-light);
+    margin-bottom: 8px;
+  }
+  input[type=text], input[type=number], input[type=email], input[type=tel], input[type=date] {
+    width: 100%;
+    background: #0E1622;
+    border: 1px solid #2A3646;
+    border-radius: 6px;
+    padding: 12px 14px;
+    color: var(--paper);
+    font-size: 15px;
+    margin-bottom: 18px;
+    font-family: inherit;
+  }
+  input:focus { outline: none; border-color: var(--brass); }
+  .field-hint { font-size: 11px; color: var(--steel-light); margin: -12px 0 18px; }
+  .error-text { color: #E5A69E; font-size: 13px; margin: 4px 0 16px; }
+
+  /* ======================================================================
+     TOGGLE ROWS (pledge type, forfeit destination)
+     ====================================================================== */
+  .toggle-row { display: flex; gap: 10px; margin-bottom: 18px; }
+  .toggle {
+    flex: 1;
+    text-align: center;
+    padding: 10px;
+    border: 1px solid #2A3646;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    color: var(--steel-light);
+    transition: all 0.15s;
+  }
+  .toggle.active {
+    border-color: var(--brass);
+    color: var(--brass-light);
+    background: rgba(200,155,60,0.08);
+  }
+  .dest-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 18px;
+  }
+
+  /* ======================================================================
+     BUTTONS: primary (brass, filled) and ghost (outline, secondary)
+     ====================================================================== */
+  button.primary {
+    width: 100%;
+    background: var(--brass);
+    color: #1A1200;
+    border: none;
+    border-radius: 6px;
+    padding: 14px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  button.primary:hover { background: var(--brass-light); }
+  button.ghost {
+    width: 100%;
+    background: transparent;
+    color: var(--steel-light);
+    border: 1px solid #2A3646;
+    border-radius: 6px;
+    padding: 10px;
+    font-size: 13px;
+    cursor: pointer;
+    margin-top: 8px;
+    font-family: inherit;
+  }
+  button.ghost:hover { border-color: var(--brass); color: var(--brass-light); }
+
+  /* ======================================================================
+     OPTION / SELECTION CARDS
+     Used for the profile page's two options, the group-manager picker,
+     and the group-manager directory.
+     ====================================================================== */
+  .option-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 18px;
+    background: #0E1622;
+    border: 1px solid #2A3646;
+    border-radius: 8px;
+    cursor: pointer;
+    margin-bottom: 12px;
+    transition: border-color 0.15s, background 0.15s;
+  }
+  .option-card:hover { border-color: var(--brass); }
+  .option-card.selected { border-color: var(--brass); background: rgba(200,155,60,0.08); }
+  .option-card .option-title { font-size: 15px; color: var(--paper); margin-bottom: 3px; }
+  .option-card .option-sub { font-size: 12px; color: var(--steel-light); }
+  .option-card .option-arrow { color: var(--brass-light); font-size: 18px; }
+
+  .manager-row { padding: 12px 0; border-bottom: 1px solid #202B3A; }
+  .manager-row:last-child { border-bottom: none; }
+  .manager-name { font-size: 14.5px; color: var(--paper); }
+  .manager-sub { font-size: 12px; color: var(--steel-light); margin-top: 2px; }
+
+  /* ======================================================================
+     LARGE / LEGIBLE EXPLAINER BLOCKS
+     Used wherever the user needs to clearly understand rules before
+     acting: what a group manager does, and how pledge refunds work.
+     ====================================================================== */
+  .explainer-card {
+    background: #17222F;
+    border: 1px solid #2A3646;
+    border-left: 4px solid var(--brass);
+    border-radius: 8px;
+    padding: 20px 22px;
+    margin-bottom: 20px;
+  }
+  .explainer-title {
+    font-family: Georgia, serif;
+    font-size: 19px;
+    color: var(--brass-light);
+    margin: 0 0 12px;
+  }
+  .explainer-list {
+    margin: 0;
+    padding-left: 20px;
+    font-size: 16px;
+    line-height: 1.65;
+    color: var(--paper);
+  }
+  .explainer-list > li { margin-bottom: 10px; }
+  .explainer-sublist {
+    margin: 8px 0 0;
+    padding-left: 20px;
+    font-size: 15px;
+    line-height: 1.6;
+  }
+  .explainer-sublist li { margin-bottom: 6px; }
+
+  /* ======================================================================
+     VAULT DIAL + STAKE DISPLAY
+     ====================================================================== */
+  .dial-wrap { display: flex; justify-content: center; margin-bottom: 8px; }
+  .dial-caption {
+    text-align: center;
+    font-family: 'SF Mono', ui-monospace, monospace;
+    font-size: 13px;
+    color: var(--steel-light);
+    margin-bottom: 20px;
+  }
+  .stake-amount {
+    font-family: Georgia, serif;
+    font-size: 44px;
+    text-align: center;
+    color: var(--brass-light);
+    margin: 4px 0 2px;
+  }
+  .stake-label {
+    text-align: center;
+    font-size: 12px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--steel-light);
+    margin-bottom: 24px;
+  }
+
+  /* ======================================================================
+     TASK LIST (checkbox/remove, name, difficulty tag)
+     ====================================================================== */
+  .task {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 0;
+    border-bottom: 1px solid #202B3A;
+  }
+  .task:last-child { border-bottom: none; }
+  .check {
+    width: 22px; height: 22px;
+    border-radius: 5px;
+    border: 2px solid var(--steel-light);
+    flex-shrink: 0;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.15s;
+  }
+  .check.done { background: var(--green); border-color: var(--green); }
+  .check svg { width: 14px; height: 14px; }
+  .task-name { flex: 1; font-size: 14.5px; }
+  .task-name.done { text-decoration: line-through; color: var(--steel-light); }
+  .task-diff {
+    font-family: 'SF Mono', ui-monospace, monospace;
+    font-size: 10.5px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    padding: 3px 7px;
+    border-radius: 4px;
+    color: var(--steel-light);
+    border: 1px solid #2A3646;
+  }
+  .task-remove { cursor: pointer; color: var(--steel-light); font-size: 16px; }
+  .task-remove:hover { color: #E5A69E; }
+
+  /* ======================================================================
+     "ADD TASK" ROW
+     ====================================================================== */
+  .add-task-row { display: flex; gap: 8px; margin-top: 10px; }
+  .add-task-row input { margin-bottom: 0; flex: 1; }
+  .add-task-row button {
+    background: #1D2836;
+    color: var(--brass-light);
+    border: 1px solid #2A3646;
+    border-radius: 6px;
+    padding: 0 16px;
+    cursor: pointer;
+    font-size: 20px;
+    font-family: inherit;
+  }
+
+  /* ======================================================================
+     STATUS BANNER (pending / safe / forfeit states)
+     ====================================================================== */
+  .status-banner {
+    text-align: center;
+    padding: 14px;
+    border-radius: 8px;
+    font-size: 13.5px;
+    margin-bottom: 20px;
+    font-family: 'SF Mono', ui-monospace, monospace;
+  }
+  .status-banner.pending { background: rgba(200,155,60,0.1); color: var(--brass-light); border: 1px solid rgba(200,155,60,0.3); }
+  .status-banner.safe { background: rgba(76,154,106,0.1); color: #8FCBA5; border: 1px solid rgba(76,154,106,0.3); }
+  .status-banner.forfeit { background: rgba(181,84,74,0.12); color: #E5A69E; border: 1px solid rgba(181,84,74,0.35); }
+
+  /* ======================================================================
+     MISC HELPER TEXT
+     ====================================================================== */
+  .note { font-size: 12px; color: var(--steel-light); line-height: 1.5; margin-top: 4px; }
+</style>
+
+<script>
+(function(){
+  const root = document.getElementById('app');
+
+  /* ========================================================================
+     MOCK DATA
+     - Group managers directory, filtered by whatever location the user
+       typed at login. Replace with a real lookup/API call later.
+     - Task-import "extensions" — external apps/sites a user could pull
+       assignments from. Buttons are wired to simulate an import for demo
+       purposes; swap in real OAuth/API integrations later.
+     ======================================================================== */
+  const GROUP_MANAGERS_BY_LOCATION = {
+    'san francisco': [
+      { name: 'Alicia Chen', sub: 'SF Bay Chapter · alicia@taskstake.example' },
+      { name: 'Marcus Webb', sub: 'SF Bay Chapter · marcus@taskstake.example' },
+    ],
+    'new york': [
+      { name: 'Priya Nair', sub: 'NYC Metro Chapter · priya@taskstake.example' },
+      { name: 'Tom Alvarez', sub: 'NYC Metro Chapter · tom@taskstake.example' },
+    ],
+    'default': [
+      { name: 'Jordan Blake', sub: 'Regional Manager · jordan@taskstake.example' },
+      { name: 'Sam Rivera', sub: 'Regional Manager · sam@taskstake.example' },
+    ],
+  };
+  function managersForLocation(loc){
+    const key = (loc || '').trim().toLowerCase();
+    return GROUP_MANAGERS_BY_LOCATION[key] || GROUP_MANAGERS_BY_LOCATION['default'];
+  }
+
+  const TASK_EXTENSIONS = [
+    'Canvas Instructure', 'Reminders', 'Google Calendar', 'Google Docs', 'Notion'
+  ];
+
+  const DEST_LABELS = {
+    charity: 'a charity of your choice',
+    grouppot: 'the group pot',
+    person: 'a person in need',
+    company: 'TaskStake (the company keeps it)',
+  };
+
+  /* ========================================================================
+     APP STATE
+     `screen` drives the router at the bottom of this file:
+     login -> groupSignIn (stub) OR profile -> groupManagers (directory)
+                                             OR chooseManager -> goalSetup
+                                             -> taskSetup -> payment -> dashboard
+     ======================================================================== */
+  let state = {
+    screen: 'login',
+
+    // Step 1 — login
+    name: '', email: '', phone: '', location: '', groupCode: '', loginError: '',
+
+    // Step 2a — chosen group manager
+    selectedManager: null, managerError: '',
+
+    // Step 2b — goal
+    goal: '', dueDate: '', targetTaskCount: 10,
+
+    // Step 2c — tasks (must have at least 1 before continuing)
+    tasks: [],
+    newTaskName: '',
+    taskError: '',
+
+    // Step 3 — payment / pledge
+    pledgeType: 'money',
+    pledgeAmount: 25,
+    pledgeAct: '',
+    moneyDestination: 'charity',
+    paymentError: '',
+
+    // Dashboard simulation toggles
+    deadlinePassed: false,
+    gracePeriodPassed: false,
+    medicalEmergency: false,
+  };
+
+  function setState(patch){ state = Object.assign({}, state, patch); render(); }
+
+  /* ========================================================================
+     SMALL SVG HELPERS
+     ======================================================================== */
+  function checkIcon(){
+    return '<svg viewBox="0 0 24 24" fill="none"><path d="M4 12l5 5L20 6" stroke="#0B1220" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  }
+
+  function vaultSVG(pct, forfeited){
+    const r = 70, c = 2*Math.PI*r;
+    const offset = c - (pct/100)*c;
+    const ringColor = forfeited ? '#B5544A' : (pct >= 100 ? '#4C9A6A' : '#C89B3C');
+    return `
+    <svg width="180" height="180" viewBox="0 0 180 180">
+      <circle cx="90" cy="90" r="${r}" fill="none" stroke="#232F3F" stroke-width="10"/>
+      <circle cx="90" cy="90" r="${r}" fill="none" stroke="${ringColor}" stroke-width="10"
+        stroke-dasharray="${c}" stroke-dashoffset="${offset}" stroke-linecap="round"
+        transform="rotate(-90 90 90)" style="transition: stroke-dashoffset 0.4s ease, stroke 0.4s ease"/>
+      <text x="90" y="97" text-anchor="middle" font-family="Georgia, serif" font-size="26" fill="${forfeited ? '#E5A69E' : '#EDE7DA'}">${Math.round(pct)}%</text>
+    </svg>`;
+  }
+
+  /* ========================================================================
+     STEP 1a — LOGIN SCREEN
+     ======================================================================== */
+  function renderLogin(){
+    root.innerHTML = `
+    <div class="wrap">
+      <p class="eyebrow">Step 1 — Sign in</p>
+      <h1>Welcome to <span>TaskStake</span></h1>
+      <div class="card">
+        <label>Your name</label>
+        <input type="text" id="login-name" placeholder="e.g. Jordan" value="${state.name}"/>
+
+        <label>Email</label>
+        <input type="email" id="login-email" placeholder="you@example.com" value="${state.email}"/>
+
+        <label>Phone (optional)</label>
+        <input type="tel" id="login-phone" placeholder="(555) 555-5555" value="${state.phone}"/>
+
+        <label>Location</label>
+        <input type="text" id="login-location" placeholder="e.g. San Francisco" value="${state.location}"/>
+
+        <label>Group code (optional)</label>
+        <input type="text" id="login-groupcode" placeholder="Leave blank if you don't have one" value="${state.groupCode}"/>
+        <p class="field-hint">Have a code from a group organizer? Enter it to join their group sign-in instead.</p>
+
+        ${state.loginError ? `<p class="error-text">${state.loginError}</p>` : ''}
+
+        <button class="primary" id="login-continue-btn">Continue</button>
+      </div>
+    </div>`;
+
+    document.getElementById('login-name').oninput = e => state.name = e.target.value;
+    document.getElementById('login-email').oninput = e => state.email = e.target.value;
+    document.getElementById('login-phone').oninput = e => state.phone = e.target.value;
+    document.getElementById('login-location').oninput = e => state.location = e.target.value;
+    document.getElementById('login-groupcode').oninput = e => state.groupCode = e.target.value;
+
+    document.getElementById('login-continue-btn').onclick = () => {
+      if (!state.name.trim() || !state.email.trim() || !state.location.trim()) {
+        setState({ loginError: 'Name, email, and location are required to continue.' });
+        return;
+      }
+      setState({ loginError: '', screen: state.groupCode.trim() ? 'groupSignIn' : 'profile' });
+    };
+  }
+
+  /* ========================================================================
+     STEP 1b — GROUP SIGN-IN (placeholder)
+     ======================================================================== */
+  function renderGroupSignIn(){
+    root.innerHTML = `
+    <div class="wrap">
+      <p class="eyebrow">Group sign-in</p>
+      <h1>You're joining a <span>group</span>.</h1>
+      <div class="card">
+        <p class="note">Group code entered: <strong style="color:var(--paper);">${state.groupCode}</strong></p>
+        <p class="note" style="margin-top:10px;">This is a placeholder screen. Group sign-in instructions and functionality will be added here later.</p>
+        <button class="ghost" id="back-to-login-btn" style="margin-top:16px;">Back to login</button>
+      </div>
+    </div>`;
+    document.getElementById('back-to-login-btn').onclick = () => setState({ screen: 'login' });
+  }
+
+  /* ========================================================================
+     STEP 1c — PRELIMINARY PROFILE PAGE
+     ======================================================================== */
+  function renderProfile(){
+    root.innerHTML = `
+    <div class="wrap">
+      <p class="eyebrow">Get started</p>
+      <h1>Hey <span>${state.name || 'there'}</span>, what's next?</h1>
+      <div class="card">
+        <div class="option-card" id="option-managers">
+          <div>
+            <div class="option-title">Group managers</div>
+            <div class="option-sub">See managers near ${state.location || 'your area'}</div>
+          </div>
+          <div class="option-arrow">›</div>
+        </div>
+        <div class="option-card" id="option-tasks">
+          <div>
+            <div class="option-title">Task upload</div>
+            <div class="option-sub">Organize tasks under a goal, with a due date</div>
+          </div>
+          <div class="option-arrow">›</div>
+        </div>
+        <button class="ghost" id="back-to-login-2-btn">Back to login</button>
+      </div>
+    </div>`;
+
+    document.getElementById('option-managers').onclick = () => setState({ screen: 'groupManagers' });
+    document.getElementById('option-tasks').onclick = () => setState({ screen: 'chooseManager' });
+    document.getElementById('back-to-login-2-btn').onclick = () => setState({ screen: 'login' });
+  }
+
+  /* ========================================================================
+     STEP 1d — GROUP MANAGERS DIRECTORY (browse-only, from profile page)
+     ======================================================================== */
+  function renderGroupManagers(){
+    const managers = managersForLocation(state.location);
+    root.innerHTML = `
+    <div class="wrap">
+      <p class="eyebrow">Group managers</p>
+      <h1>Managers near <span>${state.location || 'you'}</span></h1>
+      <div class="card">
+        ${managers.map(m => `
+          <div class="manager-row">
+            <div class="manager-name">${m.name}</div>
+            <div class="manager-sub">${m.sub}</div>
+          </div>
+        `).join('')}
+        <button class="ghost" id="back-to-profile-btn" style="margin-top:16px;">Back</button>
+      </div>
+    </div>`;
+    document.getElementById('back-to-profile-btn').onclick = () => setState({ screen: 'profile' });
+  }
+
+  /* ========================================================================
+     STEP 2a — CHOOSE A GROUP MANAGER (required before entering a goal)
+     Explains, in large legible text, what a group manager does, then
+     requires picking one manager before continuing.
+     ======================================================================== */
+  function renderChooseManager(){
+    const managers = managersForLocation(state.location);
+    root.innerHTML = `
+    <div class="wrap">
+      <p class="eyebrow">Step 2 — Choose a group manager</p>
+      <h1>Pick your <span>group manager</span></h1>
+
+      <div class="explainer-card">
+        <p class="explainer-title">What a group manager does</p>
+        <ol class="explainer-list">
+          <li>A group manager is a regional manager of a cohort of people who do tasks.</li>
+          <li>The manager can:
+            <ul class="explainer-sublist">
+              <li>Prompt you to finish your tasks.</li>
+              <li>Help you extend your deadline — <strong>once chosen, your deadline cannot be extended unless your manager signs off on it.</strong></li>
+              <li>Return your money if needed.</li>
+            </ul>
+          </li>
+        </ol>
+      </div>
+
+      <div class="card">
+        <label>Managers near ${state.location || 'you'}</label>
+        ${managers.map((m, i) => `
+          <div class="option-card ${state.selectedManager && state.selectedManager.name === m.name ? 'selected' : ''}" data-idx="${i}">
+            <div>
+              <div class="option-title">${m.name}</div>
+              <div class="option-sub">${m.sub}</div>
+            </div>
+            <div class="option-arrow">${state.selectedManager && state.selectedManager.name === m.name ? '✓' : '›'}</div>
+          </div>
+        `).join('')}
+        ${state.managerError ? `<p class="error-text">${state.managerError}</p>` : ''}
+        <button class="primary" id="manager-continue-btn">Continue</button>
+        <button class="ghost" id="back-to-profile-3-btn">Back</button>
+      </div>
+    </div>`;
+
+    document.querySelectorAll('.option-card[data-idx]').forEach(el => {
+      el.onclick = () => {
+        const idx = Number(el.dataset.idx);
+        setState({ selectedManager: managers[idx], managerError: '' });
+      };
+    });
+    document.getElementById('manager-continue-btn').onclick = () => {
+      if (!state.selectedManager) { setState({ managerError: 'Choose a group manager to continue.' }); return; }
+      setState({ screen: 'goalSetup' });
+    };
+    document.getElementById('back-to-profile-3-btn').onclick = () => setState({ screen: 'profile' });
+  }
+
+  /* ========================================================================
+     STEP 2b — GOAL SETUP
+     Collected only after a manager has been chosen.
+     ======================================================================== */
+  function renderGoalSetup(){
+    root.innerHTML = `
+    <div class="wrap">
+      <p class="eyebrow">Step 2 — Set your goal</p>
+      <h1>What are you <span>working toward</span>?</h1>
+      <div class="card">
+        <p class="note" style="margin-bottom:18px;">Manager: <strong style="color:var(--paper);">${state.selectedManager ? state.selectedManager.name : ''}</strong></p>
+
+        <label>Your goal</label>
+        <input type="text" id="goal" placeholder="e.g. Exercise 20 times or Finish 5 Assignments" value="${state.goal}"/>
+
+        <label>Due date</label>
+        <input type="date" id="due-date" value="${state.dueDate}"/>
+
+        <label>Target number of tasks</label>
+        <input type="number" id="target-count" min="1" value="${state.targetTaskCount}"/>
+
+        <button class="primary" id="goal-continue-btn">Continue</button>
+        <button class="ghost" id="back-to-manager-btn">Back</button>
+      </div>
+    </div>`;
+
+    document.getElementById('goal').oninput = e => state.goal = e.target.value;
+    document.getElementById('due-date').oninput = e => state.dueDate = e.target.value;
+    document.getElementById('target-count').oninput = e => state.targetTaskCount = Number(e.target.value) || 0;
+    document.getElementById('goal-continue-btn').onclick = () => setState({ screen: 'taskSetup' });
+    document.getElementById('back-to-manager-btn').onclick = () => setState({ screen: 'chooseManager' });
+  }
+
+  /* ========================================================================
+     STEP 2c — TASK SETUP
+     User must create at least 1 task before continuing, either by
+     "importing" from an external app/site (simulated for this demo) or by
+     adding tasks manually.
+     ======================================================================== */
+  function renderTaskSetup(){
+    root.innerHTML = `
+    <div class="wrap">
+      <p class="eyebrow">Step 2 — Add your tasks</p>
+      <h1>Build your <span>task list</span></h1>
+      <div class="card">
+        <p class="note" style="margin-bottom:14px;">Add at least one task to continue. Import from an app below, or add tasks manually.</p>
+
+        <label>Import from</label>
+        <div class="dest-grid">
+          ${TASK_EXTENSIONS.map(ext => `<div class="toggle ext-btn" data-ext="${ext}">${ext}</div>`).join('')}
+        </div>
+
+        <label>Add manually</label>
+        <div class="add-task-row" style="margin-bottom:18px;">
+          <input type="text" id="new-task" placeholder="Add a task manually..." value="${state.newTaskName}"/>
+          <button id="add-task-btn">+</button>
+        </div>
+
+        ${state.tasks.length ? state.tasks.map(t => `
+          <div class="task">
+            <div class="task-name">${t.name}</div>
+            <div class="task-diff">${t.difficulty}</div>
+            <div class="task-remove" data-remove="${t.id}">×</div>
+          </div>
+        `).join('') : `<p class="note">No tasks yet.</p>`}
+
+        ${state.taskError ? `<p class="error-text">${state.taskError}</p>` : ''}
+        <button class="primary" id="task-continue-btn" style="margin-top:16px;">Continue</button>
+        <button class="ghost" id="back-to-goal-btn">Back</button>
+      </div>
+    </div>`;
+
+    document.querySelectorAll('.ext-btn').forEach(el => {
+      el.onclick = () => {
+        const extName = el.dataset.ext;
+        state.tasks = state.tasks.concat([{ id: Date.now() + Math.random(), name: `Imported from ${extName}`, difficulty: 'medium', done: false }]);
+        render();
+      };
+    });
+    document.getElementById('new-task').oninput = e => state.newTaskName = e.target.value;
+    document.getElementById('add-task-btn').onclick = () => {
+      if (!state.newTaskName.trim()) return;
+      state.tasks = state.tasks.concat([{ id: Date.now(), name: state.newTaskName.trim(), difficulty: 'medium', done: false }]);
+      setState({ newTaskName: '' });
+    };
+    document.querySelectorAll('.task-remove').forEach(el => {
+      el.onclick = () => {
+        const id = Number(el.dataset.remove);
+        state.tasks = state.tasks.filter(t => t.id !== id);
+        render();
+      };
+    });
+    document.getElementById('task-continue-btn').onclick = () => {
+      if (state.tasks.length < 1) { setState({ taskError: 'Add at least one task to continue.' }); return; }
+      setState({ taskError: '', screen: 'payment' });
+    };
+    document.getElementById('back-to-goal-btn').onclick = () => setState({ screen: 'goalSetup' });
+  }
+
+  /* ========================================================================
+     STEP 3 — PAYMENT / PLEDGE
+     Money pledges: choose an amount, choose where forfeited money goes,
+     and see (in large legible text) exactly how refunds work at each
+     tier. Act pledges: require a signed contract with a review window.
+     ======================================================================== */
+  function renderPayment(){
+    const amt = state.pledgeAmount || 0;
+    const tier2Back = Math.round(amt * 0.8);
+    const tier2Company = Math.round(amt * 0.05);
+    const tier2Donation = amt - tier2Back - tier2Company;
+    const tier3Company = Math.round(amt * 0.10);
+    const tier3Donation = amt - tier3Company;
+    const destLabel = DEST_LABELS[state.moneyDestination];
+
+    root.innerHTML = `
+    <div class="wrap">
+      <p class="eyebrow">Step 3 — Connect a payment method</p>
+      <h1>Back your <span>pledge</span>.</h1>
+      <div class="card">
+        <label>What are you pledging?</label>
+        <div class="toggle-row">
+          <div class="toggle ${state.pledgeType === 'money' ? 'active' : ''}" data-type="money">Money</div>
+          <div class="toggle ${state.pledgeType === 'act' ? 'active' : ''}" data-type="act">An act (signed contract)</div>
+        </div>
+
+        ${state.pledgeType === 'money' ? `
+          <label>Amount at stake ($)</label>
+          <input type="number" id="amount" min="1" value="${state.pledgeAmount}"/>
+
+          <label>If forfeited, money goes to</label>
+          <div class="dest-grid">
+            <div class="toggle dest-opt ${state.moneyDestination === 'charity' ? 'active' : ''}" data-dest="charity">Charity</div>
+            <div class="toggle dest-opt ${state.moneyDestination === 'grouppot' ? 'active' : ''}" data-dest="grouppot">Group pot</div>
+            <div class="toggle dest-opt ${state.moneyDestination === 'person' ? 'active' : ''}" data-dest="person">Person in need</div>
+            <div class="toggle dest-opt ${state.moneyDestination === 'company' ? 'active' : ''}" data-dest="company">Company profit</div>
+          </div>
+
+          <div class="explainer-card">
+            <p class="explainer-title">How refunds work</p>
+            <ul class="explainer-list">
+              <li><strong>On time:</strong> complete your tasks by the due date and your $${amt} is returned automatically — no manager approval needed. If you can prove a medical emergency, your money is returned immediately without completing tasks, and you're added to the list of possible donation recipients.</li>
+              <li><strong>Late, within a month:</strong> finish after the deadline but within 30 days and you get 80% back ($${tier2Back}). 5% ($${tier2Company}) goes to TaskStake, and 15% ($${tier2Donation}) goes to ${destLabel}.</li>
+              <li><strong>Late, past a month:</strong> if 30 days pass with tasks still incomplete, you get 0% back. 10% ($${tier3Company}) goes to TaskStake, and 90% ($${tier3Donation}) goes to ${destLabel}.</li>
+            </ul>
+          </div>
+        ` : `
+          <label>The act you're pledging (if you fail)</label>
+          <input type="text" id="act" placeholder="e.g. Post an embarrassing photo" value="${state.pledgeAct}"/>
+          <p class="note">This requires a signed contract. Your referee confirms whether the act happens if you miss your deadline. <strong style="color:var(--paper);">Your contract must be reviewed and approved, which can take up to 7 business days.</strong></p>
+        `}
+
+        ${state.paymentError ? `<p class="error-text">${state.paymentError}</p>` : ''}
+        <button class="primary" id="payment-continue-btn">${state.pledgeType === 'money' ? 'Lock in stake' : 'Submit contract for review'}</button>
+        <button class="ghost" id="back-to-tasks-btn">Back</button>
+      </div>
+    </div>`;
+
+    document.querySelectorAll('.toggle[data-type]').forEach(el => {
+      el.onclick = () => setState({ pledgeType: el.dataset.type });
+    });
+    document.querySelectorAll('.dest-opt').forEach(el => {
+      el.onclick = () => setState({ moneyDestination: el.dataset.dest });
+    });
+    if (state.pledgeType === 'money') {
+      document.getElementById('amount').oninput = e => state.pledgeAmount = Number(e.target.value) || 0;
+    } else {
+      document.getElementById('act').oninput = e => state.pledgeAct = e.target.value;
+    }
+    document.getElementById('payment-continue-btn').onclick = () => setState({ paymentError: '', screen: 'dashboard' });
+    document.getElementById('back-to-tasks-btn').onclick = () => setState({ screen: 'taskSetup' });
+  }
+
+  /* ========================================================================
+     DASHBOARD SCREEN
+     Reflects the chosen manager, goal, and pledge, plus simulation
+     controls for the deadline passing, the 30-day grace window passing,
+     and reporting a medical emergency — so the refund-tier logic above
+     can be seen in action.
+     ======================================================================== */
+  function renderDashboard(){
+    const total = state.tasks.length;
+    const doneCount = state.tasks.filter(t => t.done).length;
+    const pct = total ? (doneCount / total) * 100 : 0;
+    const allDone = total > 0 && pct >= 100;
+    const amt = state.pledgeAmount || 0;
+    const destLabel = DEST_LABELS[state.moneyDestination] || 'your chosen destination';
+    const isMoney = state.pledgeType === 'money';
+
+    let bannerClass = 'pending';
+    let bannerText = `${doneCount}/${total} tasks done — deadline still open`;
+
+    if (isMoney && state.medicalEmergency) {
+      bannerClass = 'safe';
+      bannerText = `Medical emergency confirmed — your $${amt} was returned immediately, no tasks required. You've been added to the list of possible donation recipients.`;
+    } else if (isMoney && state.gracePeriodPassed) {
+      const company = Math.round(amt * 0.10), donation = amt - company;
+      bannerClass = 'forfeit';
+      bannerText = `More than 30 days late — 0% returned. 10% ($${company}) went to TaskStake, 90% ($${donation}) went to ${destLabel}.`;
+    } else if (allDone) {
+      bannerClass = 'safe';
+      if (isMoney) {
+        bannerText = state.deadlinePassed
+          ? `Completed within the 30-day grace window — 80% returned ($${Math.round(amt * 0.8)}). 5% ($${Math.round(amt * 0.05)}) went to TaskStake, 15% went to ${destLabel}.`
+          : `All tasks complete, on time — $${amt} returned automatically, no manager approval needed.`;
+      } else {
+        bannerText = 'All tasks complete — pledge released, nothing owed.';
+      }
+    } else if (state.deadlinePassed) {
+      bannerClass = 'pending';
+      bannerText = isMoney
+        ? `Deadline passed — you're in the 30-day grace window. Finish now for an 80% refund.`
+        : `Deadline passed. Pledged act now due — your referee has been notified.`;
+    }
+
+    root.innerHTML = `
+    <div class="wrap">
+      <p class="eyebrow">Welcome back, ${state.name || 'friend'}</p>
+      <h1>Your <span>vault</span></h1>
+
+      <div class="card">
+        ${state.selectedManager ? `<p class="note" style="margin-bottom:6px;">Manager: <strong style="color:var(--paper);">${state.selectedManager.name}</strong></p>` : ''}
+        ${state.goal ? `
+          <p class="note" style="margin-bottom:6px;">Goal: <strong style="color:var(--paper);">${state.goal}</strong></p>
+          <p class="note" style="margin-bottom:16px;">${state.dueDate ? 'Due ' + state.dueDate + ' · ' : ''}Target: ${state.targetTaskCount} tasks</p>
+        ` : ''}
+        ${!isMoney ? `<p class="note" style="margin-bottom:16px;">Contract status: <strong style="color:var(--paper);">Under review</strong> (approval can take up to 7 business days).</p>` : ''}
+
+        <div class="dial-wrap">${vaultSVG(pct, state.gracePeriodPassed || state.deadlinePassed && !allDone)}</div>
+        <div class="dial-caption">${doneCount} of ${total} tasks complete</div>
+
+        <div class="stake-amount">${isMoney ? '$' + state.pledgeAmount : '—'}</div>
+        <div class="stake-label">${isMoney ? 'at stake' : state.pledgeAct || 'act pledged'}</div>
+
+        <div class="status-banner ${bannerClass}">${bannerText}</div>
+
+        ${state.tasks.map(t => `
+          <div class="task">
+            <div class="check ${t.done ? 'done' : ''}" data-id="${t.id}">${t.done ? checkIcon() : ''}</div>
+            <div class="task-name ${t.done ? 'done' : ''}">${t.name}</div>
+            <div class="task-diff">${t.difficulty}</div>
+          </div>
+        `).join('')}
+
+        <div class="add-task-row">
+          <input type="text" id="new-task" placeholder="Add another task..." value="${state.newTaskName}"/>
+          <button id="add-task-btn">+</button>
+        </div>
+      </div>
+
+      <button class="ghost" id="simulate-btn">${state.deadlinePassed ? 'Reset: deadline simulation' : 'Simulate: deadline passes now'}</button>
+      ${isMoney ? `<button class="ghost" id="simulate-medical-btn">${state.medicalEmergency ? 'Reset: medical emergency' : 'Simulate: report medical emergency'}</button>` : ''}
+      ${isMoney && state.deadlinePassed && !state.medicalEmergency ? `<button class="ghost" id="simulate-grace-btn">${state.gracePeriodPassed ? 'Reset: grace window' : 'Simulate: 30-day grace window also passed'}</button>` : ''}
+
+      <p class="note" style="text-align:center; margin-top:14px;">MVP demo — no real payment is processed. Task completion here is self-reported; a production version would add lightweight verification (photo, referee, or integration check).</p>
+    </div>`;
+
+    document.querySelectorAll('.check').forEach(el => {
+      el.onclick = () => {
+        const id = Number(el.dataset.id);
+        state.tasks = state.tasks.map(t => t.id === id ? { ...t, done: !t.done } : t);
+        render();
+      };
+    });
+    document.getElementById('new-task').oninput = e => state.newTaskName = e.target.value;
+    document.getElementById('add-task-btn').onclick = () => {
+      if (!state.newTaskName.trim()) return;
+      state.tasks = state.tasks.concat([{ id: Date.now(), name: state.newTaskName.trim(), difficulty: 'medium', done: false }]);
+      setState({ newTaskName: '' });
+    };
+    document.getElementById('simulate-btn').onclick = () => {
+      const next = !state.deadlinePassed;
+      setState({ deadlinePassed: next, gracePeriodPassed: next ? state.gracePeriodPassed : false });
+    };
+    const medBtn = document.getElementById('simulate-medical-btn');
+    if (medBtn) medBtn.onclick = () => setState({ medicalEmergency: !state.medicalEmergency });
+    const graceBtn = document.getElementById('simulate-grace-btn');
+    if (graceBtn) graceBtn.onclick = () => setState({ gracePeriodPassed: !state.gracePeriodPassed });
+  }
+
+  /* ========================================================================
+     ROUTER + INIT
+     ======================================================================== */
+  function render(){
+    if (state.screen === 'login') renderLogin();
+    else if (state.screen === 'groupSignIn') renderGroupSignIn();
+    else if (state.screen === 'profile') renderProfile();
+    else if (state.screen === 'groupManagers') renderGroupManagers();
+    else if (state.screen === 'chooseManager') renderChooseManager();
+    else if (state.screen === 'goalSetup') renderGoalSetup();
+    else if (state.screen === 'taskSetup') renderTaskSetup();
+    else if (state.screen === 'payment') renderPayment();
+    else renderDashboard();
+  }
+
+  render();
+})();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Home Page</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap');
+
+  :root{
+    --bg: #F6F6F1;
+    --paper: #FFFFFF;
+    --ink: #262620;
+    --muted: #8A897E;
+    --border: #E4E3DA;
+    --accent: #2F6F63;
+    --accent-soft: #E7F1EE;
+  }
+
+  *{ box-sizing: border-box; }
+
+  body{
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'Inter', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap{
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 96px 24px 64px;
+  }
+
+  .eyebrow{
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin: 0 0 12px;
+  }
+
+  h1{
+    font-family: 'Fraunces', serif;
+    font-weight: 600;
+    font-size: 40px;
+    line-height: 1.1;
+    margin: 0 0 40px;
+    letter-spacing: -0.01em;
+  }
+
+  .card{
+    background: var(--paper);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    overflow: hidden;
+    box-shadow: 0 1px 2px rgba(20,20,15,0.04);
+  }
+
+  a.row{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 22px 26px;
+    text-decoration: none;
+    color: var(--ink);
+    border-bottom: 1px solid var(--border);
+    transition: background 0.15s ease;
+  }
+
+  .card a.row:last-child{ border-bottom: none; }
+
+  a.row:hover{ background: var(--accent-soft); }
+
+  .row-label{
+    font-size: 17px;
+    font-weight: 500;
+  }
+
+  .row-arrow{
+    font-family: 'IBM Plex Mono', monospace;
+    color: var(--muted);
+    font-size: 14px;
+  }
+
+  a.row:hover .row-arrow{ color: var(--accent); }
+
+  .foot{
+    margin-top: 32px;
+    font-size: 13px;
+    color: var(--muted);
+  }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <p class="eyebrow">Project Drafts</p>
+    <h1>Home Page</h1>
+
+    <div class="card">
+      <a class="row" href="Home Pages/Draft Set 1.html">
+        <span class="row-label">Draft Set 1</span>
+        <span class="row-arrow">&#8594;</span>
+      </a>
+      <a class="row" href="Home Pages/Draft Set 2.html">
+        <span class="row-label">Draft Set 2</span>
+        <span class="row-arrow">&#8594;</span>
+      </a>
+    </div>
+
+    <p class="foot">Select a set to review its drafts and notes.</p>
+  </div>
+</body>
+</html>
