@@ -154,27 +154,27 @@
           <li>New login page (new first page): name (required), email (required), phone (optional), location (required), <strong>optional group code.</strong>
             <ol>
               <li>If group code entered:
-                <ol>
+                <ul>
                   <li>Routes to group sign in</li>
-                </ol>
+                </ul>
               </li>
               <li>else:
-                <ol>
+                <ul>
                   <li>Routes to preliminary Profile Page
-                    <ol>
+                    <ul>
                       <li>Group managers</li>
                       <li>Task upload — goal setup with a goal name, due date, and target number of tasks, then into the existing pledge + task-checklist dashboard.</li>
-                    </ol>
+                    </ul>
                   </li>
-                </ol>
+                </ul>
               </li>
             </ol>
           </li>
         </ol>
         <p>
-          - Login validates that name, email, and location are filled in before continuing (simple inline error, no alert popups).<br>
-          - The dashboard now also displays the due date and target task count alongside the existing progress ring and pledge.<br>
-          - Group managers data is mocked (keyed by a couple of sample locations plus a generic fallback) — easy to swap for a real lookup later.
+          <li>- Login validates that name, email, and location are filled in before continuing (simple inline error, no alert popups).<br></li>
+          <li>- The dashboard now also displays the due date and target task count alongside the existing progress ring and pledge.<br></li>
+          <li>- Group managers data is mocked (keyed by a couple of sample locations plus a generic fallback) — easy to swap for a real lookup later.</li>
         </p>
       </div>
     </div>
